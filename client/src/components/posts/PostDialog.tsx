@@ -83,6 +83,7 @@ export function PostDialog() {
             </div>
           ) : (
             <PostForm
+              key={selectedPostId || "new"}
               post={selectedPostId ? (post ?? null) : null}
               onSubmit={handleSubmit}
               onDelete={selectedPostId ? () => deleteMutation.mutate() : undefined}

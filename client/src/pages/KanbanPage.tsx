@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
+  pointerWithin,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -92,6 +92,7 @@ export function KanbanPage() {
   const searchQuery = useUIStore((s) => s.searchQuery);
   const queryClient = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [localStatusOverrides, setLocalStatusOverrides] = useState<Record<string, string>>({});
 
   const params: Record<string, string> = {};
   if (filters.platform) params.platform = filters.platform;
@@ -106,21 +107,14 @@ export function KanbanPage() {
   const statusMutation = useMutation({
     mutationFn: ({ id, status, sortOrder }: { id: string; status: string; sortOrder?: number }) =>
       api.updatePostStatus(id, status, sortOrder),
-    onMutate: async ({ id, status }) => {
-      await queryClient.cancelQueries({ queryKey: ["posts"] });
-      const previous = queryClient.getQueryData(["posts", params]);
-      queryClient.setQueryData(["posts", params], (old: Post[] | undefined) =>
-        old?.map((p) => (p.id === id ? { ...p, status } : p))
-      );
-      return { previous };
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
-    onError: (_err, _vars, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["posts", params], context.previous);
-      }
+    onError: () => {
+      setLocalStatusOverrides({});
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      setLocalStatusOverrides({});
     },
   });
 
@@ -129,25 +123,33 @@ export function KanbanPage() {
     useSensor(KeyboardSensor)
   );
 
+  // Merge local overrides into posts for immediate visual feedback
+  const displayPosts = useMemo(() =>
+    posts.map((p: Post) =>
+      localStatusOverrides[p.id] ? { ...p, status: localStatusOverrides[p.id] } : p
+    ),
+    [posts, localStatusOverrides]
+  );
+
   const columnPosts = useMemo(() => {
     const map: Record<string, Post[]> = {};
     for (const s of STATUSES) {
-      map[s.value] = posts
+      map[s.value] = displayPosts
         .filter((p: Post) => p.status === s.value)
         .sort((a: Post, b: Post) => a.sortOrder - b.sortOrder);
     }
     return map;
-  }, [posts]);
+  }, [displayPosts]);
 
-  const activePost = activeId ? posts.find((p: Post) => p.id === activeId) : null;
+  const activePost = activeId ? displayPosts.find((p: Post) => p.id === activeId) : null;
 
   function findColumnForId(id: string): string | null {
-    // Check if id is a post id
+    // Check droppable containers (statuses) FIRST
+    if (STATUSES.some((s) => s.value === id)) return id;
+    // Then check individual post items
     for (const [status, items] of Object.entries(columnPosts)) {
       if (items.some((p) => p.id === id)) return status;
     }
-    // Check if id is a status (column droppable)
-    if (STATUSES.some((s) => s.value === id)) return id;
     return null;
   }
 
@@ -167,7 +169,9 @@ export function KanbanPage() {
     if (!activeColumn || !overColumn) return;
 
     if (activeColumn !== overColumn) {
-      // Moved to a different column — update status
+      // Immediate visual update via local state
+      setLocalStatusOverrides((prev) => ({ ...prev, [active.id as string]: overColumn }));
+      // Persist to server
       statusMutation.mutate({
         id: active.id as string,
         status: overColumn,
@@ -182,7 +186,7 @@ export function KanbanPage() {
       <div className="overflow-x-auto pb-4">
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={pointerWithin}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >

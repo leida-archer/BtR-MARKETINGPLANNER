@@ -24,6 +24,25 @@ const EMPTY_FORM: PostFormData = {
   assetIds: [],
 };
 
+function mapPostToForm(post: Post): PostFormData {
+  return {
+    title: post.title,
+    platform: post.platform,
+    postType: post.postType,
+    status: post.status,
+    priority: post.priority,
+    scheduledDate: post.scheduledDate ? post.scheduledDate.split("T")[0] : "",
+    scheduledTime: post.scheduledTime || "",
+    caption: post.caption || "",
+    notes: post.notes || "",
+    mediaUrl: post.mediaUrl || "",
+    eventId: post.eventId || "",
+    collaboratorId: post.collaboratorId || "",
+    tagIds: post.tags?.map((t) => t.tagId) || [],
+    assetIds: post.assets?.map((a) => a.assetId) || [],
+  };
+}
+
 interface DropdownOption {
   value: string;
   label: string;
@@ -130,7 +149,9 @@ export function PostForm({
   onSubmit: (data: PostFormData) => void;
   onDelete?: () => void;
 }) {
-  const [form, setForm] = useState<PostFormData>(EMPTY_FORM);
+  const [form, setForm] = useState<PostFormData>(() =>
+    post ? mapPostToForm(post) : EMPTY_FORM
+  );
 
   const queryClient = useQueryClient();
   const { data: events } = useQuery({ queryKey: ["events"], queryFn: api.getEvents });
@@ -140,22 +161,7 @@ export function PostForm({
 
   useEffect(() => {
     if (post) {
-      setForm({
-        title: post.title,
-        platform: post.platform,
-        postType: post.postType,
-        status: post.status,
-        priority: post.priority,
-        scheduledDate: post.scheduledDate ? post.scheduledDate.split("T")[0] : "",
-        scheduledTime: post.scheduledTime || "",
-        caption: post.caption || "",
-        notes: post.notes || "",
-        mediaUrl: post.mediaUrl || "",
-        eventId: post.eventId || "",
-        collaboratorId: post.collaboratorId || "",
-        tagIds: post.tags?.map((t) => t.tagId) || [],
-        assetIds: post.assets?.map((a) => a.assetId) || [],
-      });
+      setForm(mapPostToForm(post));
     } else {
       setForm(EMPTY_FORM);
     }
