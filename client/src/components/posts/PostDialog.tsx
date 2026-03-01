@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -12,11 +11,16 @@ export function PostDialog() {
   const closeDialog = useUIStore((s) => s.closePostDialog);
   const queryClient = useQueryClient();
 
-  const { data: post, isLoading } = useQuery({
-    queryKey: ["post", selectedPostId],
-    queryFn: () => api.getPost(selectedPostId!),
-    enabled: !!selectedPostId,
+  // Use the already-cached posts list (prefetched in main.tsx) instead of
+  // a separate per-post API call that would hit a cold-start serverless function
+  const { data: allPosts = [] } = useQuery({
+    queryKey: ["posts"],
+    queryFn: () => api.getPosts(),
   });
+
+  const post = selectedPostId
+    ? allPosts.find((p) => p.id === selectedPostId) ?? null
+    : null;
 
   const createMutation = useMutation({
     mutationFn: (data: PostFormData) => api.createPost(data),
@@ -32,7 +36,6 @@ export function PostDialog() {
     mutationFn: (data: PostFormData) => api.updatePost(selectedPostId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      queryClient.invalidateQueries({ queryKey: ["post", selectedPostId] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
       closeDialog();
@@ -77,18 +80,12 @@ export function PostDialog() {
           </button>
         </div>
         <div className="p-6">
-          {selectedPostId && !post ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-magenta border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <PostForm
-              key={selectedPostId || "new"}
-              post={post ?? null}
-              onSubmit={handleSubmit}
-              onDelete={selectedPostId ? () => deleteMutation.mutate() : undefined}
-            />
-          )}
+          <PostForm
+            key={selectedPostId || "new"}
+            post={post}
+            onSubmit={handleSubmit}
+            onDelete={selectedPostId ? () => deleteMutation.mutate() : undefined}
+          />
         </div>
       </div>
     </div>

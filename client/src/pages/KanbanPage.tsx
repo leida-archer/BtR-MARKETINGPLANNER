@@ -108,11 +108,23 @@ export function KanbanPage() {
   const statusMutation = useMutation({
     mutationFn: ({ id, status, sortOrder }: { id: string; status: string; sortOrder?: number }) =>
       api.updatePostStatus(id, status, sortOrder),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    onSuccess: (_data, variables) => {
+      // Directly update all cached post lists with the new status
+      // This is immediate — no waiting for a background refetch
+      queryClient.setQueriesData<Post[]>(
+        { queryKey: ["posts"] },
+        (old) => old?.map((p) =>
+          p.id === variables.id ? { ...p, status: variables.status as Status } : p
+        ),
+      );
     },
-    onError: () => {
-      setLocalStatusOverrides({});
+    onError: (_err, variables) => {
+      // Revert only the specific post's override on failure
+      setLocalStatusOverrides((prev) => {
+        const next = { ...prev };
+        delete next[variables.id];
+        return next;
+      });
     },
   });
 
