@@ -5,6 +5,7 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  base: "/BtR-MARKETINGPLANNER/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -12,15 +13,5 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    proxy: {
-      "/api": {
-        target: "http://localhost:3002",
-        changeOrigin: true,
-      },
-      "/uploads": {
-        target: "http://localhost:3002",
-        changeOrigin: true,
-      },
-    },
   },
 });

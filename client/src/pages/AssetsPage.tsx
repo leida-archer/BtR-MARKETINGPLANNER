@@ -96,9 +96,9 @@ export function AssetsPage() {
           >
             {/* Thumbnail */}
             <div className="aspect-square bg-ink flex items-center justify-center relative">
-              {asset.thumbnailUrl ? (
+              {asset.mimeType.startsWith("image/") && asset.dataUrl ? (
                 <img
-                  src={asset.thumbnailUrl}
+                  src={asset.dataUrl}
                   alt={asset.alt || asset.filename}
                   className="w-full h-full object-cover"
                 />
@@ -152,13 +152,13 @@ export function AssetsPage() {
             </button>
             {previewAsset.mimeType.startsWith("image/") ? (
               <img
-                src={previewAsset.storagePath}
+                src={previewAsset.dataUrl}
                 alt={previewAsset.alt || previewAsset.filename}
                 className="max-w-full max-h-[80vh] object-contain"
               />
             ) : previewAsset.mimeType.startsWith("video/") ? (
               <video
-                src={previewAsset.storagePath}
+                src={previewAsset.dataUrl}
                 controls
                 className="max-w-full max-h-[80vh]"
               />

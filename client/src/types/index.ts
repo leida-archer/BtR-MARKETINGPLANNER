@@ -50,10 +50,9 @@ export interface Collaborator {
 export interface Asset {
   id: string;
   filename: string;
-  storagePath: string;
+  dataUrl: string;
   mimeType: string;
   fileSize: number;
-  thumbnailUrl: string | null;
   alt: string | null;
   createdAt: string;
   posts?: { postId: string }[];
