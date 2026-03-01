@@ -12,7 +12,7 @@ export function PostDialog() {
   const closeDialog = useUIStore((s) => s.closePostDialog);
   const queryClient = useQueryClient();
 
-  const { data: post } = useQuery({
+  const { data: post, isLoading } = useQuery({
     queryKey: ["post", selectedPostId],
     queryFn: () => api.getPost(selectedPostId!),
     enabled: !!selectedPostId,
@@ -77,11 +77,17 @@ export function PostDialog() {
           </button>
         </div>
         <div className="p-6">
-          <PostForm
-            post={selectedPostId ? (post as Post) : null}
-            onSubmit={handleSubmit}
-            onDelete={selectedPostId ? () => deleteMutation.mutate() : undefined}
-          />
+          {selectedPostId && isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-6 h-6 border-2 border-magenta border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <PostForm
+              post={selectedPostId ? (post ?? null) : null}
+              onSubmit={handleSubmit}
+              onDelete={selectedPostId ? () => deleteMutation.mutate() : undefined}
+            />
+          )}
         </div>
       </div>
     </div>

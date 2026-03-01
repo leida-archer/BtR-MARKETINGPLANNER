@@ -7,6 +7,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
   type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
@@ -52,6 +53,7 @@ function KanbanColumn({
   posts: Post[];
 }) {
   const ids = posts.map((p) => p.id);
+  const { setNodeRef } = useDroppable({ id: status });
 
   return (
     <div className="flex flex-col min-w-[260px] w-[260px] shrink-0">
@@ -65,11 +67,12 @@ function KanbanColumn({
       </div>
 
       {/* Droppable area */}
-      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        <div
-          className="flex-1 space-y-2 min-h-[200px] p-2 rounded-lg bg-ink/50 border border-border/50"
-          data-status={status}
-        >
+      <div
+        ref={setNodeRef}
+        className="flex-1 space-y-2 min-h-[200px] p-2 rounded-lg bg-ink/50 border border-border/50"
+        data-status={status}
+      >
+        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
           {posts.map((post) => (
             <SortablePostCard key={post.id} post={post} />
           ))}
@@ -78,8 +81,8 @@ function KanbanColumn({
               Drop posts here
             </div>
           )}
-        </div>
-      </SortableContext>
+        </SortableContext>
+      </div>
     </div>
   );
 }
@@ -103,7 +106,22 @@ export function KanbanPage() {
   const statusMutation = useMutation({
     mutationFn: ({ id, status, sortOrder }: { id: string; status: string; sortOrder?: number }) =>
       api.updatePostStatus(id, status, sortOrder),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["posts"] }),
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["posts"] });
+      const previous = queryClient.getQueryData(["posts", params]);
+      queryClient.setQueryData(["posts", params], (old: Post[] | undefined) =>
+        old?.map((p) => (p.id === id ? { ...p, status } : p))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["posts", params], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
   });
 
   const sensors = useSensors(
@@ -144,13 +162,7 @@ export function KanbanPage() {
     if (!over) return;
 
     const activeColumn = findColumnForId(active.id as string);
-    let overColumn = findColumnForId(over.id as string);
-
-    // If we dropped on a column area directly
-    if (!overColumn && over.id) {
-      const statusVal = (over as any).data?.current?.sortable?.containerId;
-      if (statusVal) overColumn = statusVal;
-    }
+    const overColumn = findColumnForId(over.id as string);
 
     if (!activeColumn || !overColumn) return;
 

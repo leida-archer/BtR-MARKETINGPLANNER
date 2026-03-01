@@ -8,7 +8,9 @@ import {
   PanelLeftClose,
   PanelLeft,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUIStore } from "@/stores/uiStore";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -22,6 +24,28 @@ const NAV_ITEMS = [
 export function Sidebar() {
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggle = useUIStore((s) => s.toggleSidebar);
+  const queryClient = useQueryClient();
+
+  const prefetchMap: Record<string, () => void> = {
+    "/": () => {
+      queryClient.prefetchQuery({ queryKey: ["posts"], queryFn: () => api.getPosts() });
+      queryClient.prefetchQuery({ queryKey: ["analytics", "stats"], queryFn: api.getStats });
+      queryClient.prefetchQuery({ queryKey: ["analytics", "heatmap"], queryFn: () => api.getHeatmap(90) });
+      queryClient.prefetchQuery({ queryKey: ["analytics", "conflicts"], queryFn: api.getConflicts });
+    },
+    "/calendar": () => {
+      queryClient.prefetchQuery({ queryKey: ["posts"], queryFn: () => api.getPosts() });
+    },
+    "/kanban": () => {
+      queryClient.prefetchQuery({ queryKey: ["posts"], queryFn: () => api.getPosts() });
+    },
+    "/events": () => {
+      queryClient.prefetchQuery({ queryKey: ["events"], queryFn: api.getEvents });
+    },
+    "/assets": () => {
+      queryClient.prefetchQuery({ queryKey: ["assets"], queryFn: api.getAssets });
+    },
+  };
 
   return (
     <aside
@@ -59,6 +83,7 @@ export function Sidebar() {
             key={to}
             to={to}
             end={to === "/"}
+            onMouseEnter={() => prefetchMap[to]?.()}
             className={({ isActive }) =>
               cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
