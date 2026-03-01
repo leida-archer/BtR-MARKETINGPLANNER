@@ -50,7 +50,7 @@ export interface Collaborator {
 export interface Asset {
   id: string;
   filename: string;
-  dataUrl: string;
+  url: string;
   mimeType: string;
   fileSize: number;
   alt: string | null;

@@ -199,7 +199,7 @@ function AssetPickerModal({
                   >
                     {asset.mimeType.startsWith("image/") ? (
                       <img
-                        src={asset.dataUrl}
+                        src={asset.url}
                         alt={asset.alt || asset.filename}
                         className="w-full h-full object-cover"
                       />
@@ -245,7 +245,7 @@ function AssetPickerModal({
                     <div className="w-10 h-10 rounded bg-ink border border-border overflow-hidden shrink-0 flex items-center justify-center">
                       {asset.mimeType.startsWith("image/") ? (
                         <img
-                          src={asset.dataUrl}
+                          src={asset.url}
                           alt={asset.alt || asset.filename}
                           className="w-full h-full object-cover"
                         />
@@ -374,7 +374,7 @@ export function AssetPicker({
             >
               {asset.mimeType.startsWith("image/") ? (
                 <img
-                  src={asset.dataUrl}
+                  src={asset.url}
                   alt={asset.alt || asset.filename}
                   className="w-full h-full object-cover"
                 />

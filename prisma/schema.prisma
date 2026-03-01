@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_URL")
+  directUrl = env("POSTGRES_URL")
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  name        String
+  venue       String?
+  date        DateTime
+  description String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  posts       Post[]
+}
+
+model Post {
+  id             String        @id @default(cuid())
+  title          String
+  platform       String
+  postType       String
+  status         String        @default("idea")
+  priority       String        @default("medium")
+  scheduledDate  DateTime?
+  scheduledTime  String?
+  caption        String?
+  notes          String?
+  mediaUrl       String?
+  sortOrder      Int           @default(0)
+  eventId        String?
+  event          Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  collaboratorId String?
+  collaborator   Collaborator? @relation(fields: [collaboratorId], references: [id], onDelete: SetNull)
+  tags           PostTag[]
+  assets         PostAsset[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status])
+  @@index([platform])
+  @@index([scheduledDate])
+  @@index([eventId])
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  color String    @default("#D6246E")
+  posts PostTag[]
+}
+
+model PostTag {
+  postId String
+  tagId  String
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+model Collaborator {
+  id        String   @id @default(cuid())
+  name      String
+  role      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  posts     Post[]
+}
+
+model Asset {
+  id        String      @id @default(cuid())
+  filename  String
+  url       String
+  mimeType  String
+  fileSize  Int
+  alt       String?
+  createdAt DateTime    @default(now())
+  posts     PostAsset[]
+}
+
+model PostAsset {
+  postId  String
+  assetId String
+  post    Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  asset   Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@id([postId, assetId])
+}

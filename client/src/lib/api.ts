@@ -1,196 +1,132 @@
-// Client-side API layer — wraps localStorage DB
-// Same interface as the original fetch-based API so no component changes needed
+// Client-side API layer — fetches from Vercel Serverless Functions
+// All data stored in Vercel Postgres + Vercel Blob (shared across all users)
 
-import {
-  postsDB,
-  eventsDB,
-  tagsDB,
-  collaboratorsDB,
-  assetsDB,
-  analyticsDB,
-  generateCampaignPosts,
-  type PostRecord,
-  type EventRecord,
-} from "./db";
-import {
-  putBlob,
-  getBlob,
-  deleteBlob,
-  getAllBlobUrls,
-  trackBlobUrl,
-  revokeBlobUrl,
-} from "./assetStorage";
-import type { Post, Event, Asset } from "@/types";
+import type { Post, Event, Asset, Tag, Collaborator, Stats, HeatmapEntry, Conflict } from "@/types";
 
-// Cached blob URL map — refreshed by getAssets()
-let blobUrlCache = new Map<string, string>();
-
-function enrichPost(p: PostRecord): Post {
-  const event = p.eventId ? eventsDB.getById(p.eventId) : null;
-  const tags = tagsDB.getAll().filter((t) => p.tagIds.includes(t.id));
-  const collaborators = collaboratorsDB.getAll();
-  const collaborator = p.collaboratorId
-    ? collaborators.find((c) => c.id === p.collaboratorId) || null
-    : null;
-
-  const allAssets = assetsDB.getAll();
-  const resolvedAssets = (p.assetIds || [])
-    .map((assetId) => {
-      const meta = allAssets.find((a) => a.id === assetId);
-      if (!meta) return null;
-      const asset: Asset = { ...meta, dataUrl: blobUrlCache.get(assetId) || "" };
-      return { postId: p.id, assetId: asset.id, asset };
-    })
-    .filter(Boolean);
-
-  return {
-    ...p,
-    event: event ? { id: event.id, name: event.name } : null,
-    collaborator: collaborator ? { id: collaborator.id, name: collaborator.name } : null,
-    tags: tags.map((t) => ({ postId: p.id, tagId: t.id, tag: t })),
-    assets: resolvedAssets,
-  } as Post;
-}
-
-function enrichEvent(e: EventRecord): Event {
-  const posts = postsDB
-    .getAll()
-    .filter((p) => p.eventId === e.id)
-    .map((p) => ({ id: p.id, status: p.status, platform: p.platform }));
-  return { ...e, posts } as Event;
-}
-
-function enrichEventFull(e: EventRecord): Event {
-  const posts = postsDB
-    .getAll()
-    .filter((p) => p.eventId === e.id)
-    .map(enrichPost);
-  return { ...e, posts } as Event;
+async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    headers: { "Content-Type": "application/json" },
+    ...init,
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`API error ${res.status}: ${body}`);
+  }
+  return res.json();
 }
 
 export const api = {
   // Posts
-  getPosts: (params?: Record<string, string>) =>
-    Promise.resolve(postsDB.getAll(params).map(enrichPost)),
-  getPost: (id: string) => {
-    const post = postsDB.getById(id);
-    return Promise.resolve(post ? enrichPost(post) : null);
+  getPosts: (params?: Record<string, string>) => {
+    const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+    return fetchJSON<Post[]>(`/api/posts${qs}`);
   },
-  createPost: (data: any) => {
-    const post = postsDB.create({
-      ...data,
-      tagIds: data.tagIds || [],
-      assetIds: data.assetIds || [],
-      scheduledDate: data.scheduledDate || null,
-      scheduledTime: data.scheduledTime || null,
-      eventId: data.eventId || null,
-      collaboratorId: data.collaboratorId || null,
-    });
-    return Promise.resolve(enrichPost(post));
-  },
-  updatePost: (id: string, data: any) => {
-    const post = postsDB.update(id, {
-      ...data,
-      tagIds: data.tagIds || [],
-      assetIds: data.assetIds || [],
-      scheduledDate: data.scheduledDate || null,
-      scheduledTime: data.scheduledTime || null,
-      eventId: data.eventId || null,
-      collaboratorId: data.collaboratorId || null,
-    });
-    return Promise.resolve(post ? enrichPost(post) : null);
-  },
+  getPost: (id: string) => fetchJSON<Post>(`/api/posts/${id}`),
+  createPost: (data: any) =>
+    fetchJSON<Post>("/api/posts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updatePost: (id: string, data: any) =>
+    fetchJSON<Post>(`/api/posts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
   updatePostStatus: (id: string, status: string, sortOrder?: number) =>
-    Promise.resolve(postsDB.update(id, { status, ...(sortOrder !== undefined ? { sortOrder } : {}) })),
+    fetchJSON<Post>(`/api/posts/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, sortOrder }),
+    }),
   reschedulePost: (id: string, scheduledDate: string, scheduledTime?: string) =>
-    Promise.resolve(postsDB.update(id, { scheduledDate, ...(scheduledTime !== undefined ? { scheduledTime } : {}) })),
-  reorderPosts: (updates: { id: string; sortOrder: number }[]) => {
-    postsDB.reorder(updates);
-    return Promise.resolve({ success: true });
-  },
-  deletePost: (id: string) => {
-    postsDB.delete(id);
-    return Promise.resolve({ success: true });
-  },
+    fetchJSON<Post>(`/api/posts/${id}/schedule`, {
+      method: "PATCH",
+      body: JSON.stringify({ scheduledDate, scheduledTime }),
+    }),
+  reorderPosts: (updates: { id: string; sortOrder: number }[]) =>
+    fetchJSON<{ success: boolean }>("/api/posts/reorder", {
+      method: "PATCH",
+      body: JSON.stringify({ updates }),
+    }),
+  deletePost: (id: string) =>
+    fetchJSON<{ success: boolean }>(`/api/posts/${id}`, { method: "DELETE" }),
 
   // Events
-  getEvents: () => Promise.resolve(eventsDB.getAll().map(enrichEvent)),
-  getEvent: (id: string) => {
-    const event = eventsDB.getById(id);
-    return Promise.resolve(event ? enrichEventFull(event) : null);
-  },
-  createEvent: (data: any) => Promise.resolve(eventsDB.create(data)),
-  updateEvent: (id: string, data: any) => Promise.resolve(eventsDB.update(id, data)),
-  deleteEvent: (id: string) => {
-    eventsDB.delete(id);
-    return Promise.resolve({ success: true });
-  },
-  generateCampaign: (id: string) => {
-    const posts = generateCampaignPosts(id);
-    return Promise.resolve({ generated: posts.length, posts });
-  },
+  getEvents: () => fetchJSON<Event[]>("/api/events"),
+  getEvent: (id: string) => fetchJSON<Event>(`/api/events/${id}`),
+  createEvent: (data: any) =>
+    fetchJSON<Event>("/api/events", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateEvent: (id: string, data: any) =>
+    fetchJSON<Event>(`/api/events/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  deleteEvent: (id: string) =>
+    fetchJSON<{ success: boolean }>(`/api/events/${id}`, { method: "DELETE" }),
+  generateCampaign: (id: string) =>
+    fetchJSON<{ generated: number; posts: Post[] }>(`/api/events/${id}/campaign`, {
+      method: "POST",
+    }),
 
   // Tags
-  getTags: () => Promise.resolve(tagsDB.getAll()),
-  createTag: (data: any) => Promise.resolve(tagsDB.create(data)),
-  deleteTag: (id: string) => {
-    tagsDB.delete(id);
-    return Promise.resolve({ success: true });
-  },
+  getTags: () => fetchJSON<Tag[]>("/api/tags"),
+  createTag: (data: any) =>
+    fetchJSON<Tag>("/api/tags", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  deleteTag: (id: string) =>
+    fetchJSON<{ success: boolean }>(`/api/tags/${id}`, { method: "DELETE" }),
 
   // Collaborators
-  getCollaborators: () => Promise.resolve(collaboratorsDB.getAll()),
-  createCollaborator: (data: any) => Promise.resolve(collaboratorsDB.create(data)),
+  getCollaborators: () => fetchJSON<Collaborator[]>("/api/collaborators"),
+  createCollaborator: (data: any) =>
+    fetchJSON<Collaborator>("/api/collaborators", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
-  // Assets — binary stored in IndexedDB, metadata in localStorage
-  getAssets: async (): Promise<Asset[]> => {
-    blobUrlCache = await getAllBlobUrls();
-    const records = assetsDB.getAll();
-    return records.map((r) => ({
-      ...r,
-      dataUrl: blobUrlCache.get(r.id) || "",
-    }));
-  },
+  // Assets — files stored in Vercel Blob, metadata in Vercel Postgres
+  getAssets: () => fetchJSON<Asset[]>("/api/assets"),
   uploadAsset: async (file: File): Promise<Asset> => {
-    const buffer = await file.arrayBuffer();
-    const blob = new Blob([buffer], { type: file.type });
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
-    await putBlob(id, blob);
-    const record = assetsDB.create({
-      id,
+    const { upload } = await import("@vercel/blob/client");
+    const blob = await upload(file.name, file, {
+      access: "public",
+      handleUploadUrl: "/api/assets/upload",
+    });
+    // The onUploadCompleted callback on the server creates the DB record.
+    // Return a temporary asset object; the next getAssets() call will have the real one.
+    return {
+      id: "",
       filename: file.name,
+      url: blob.url,
       mimeType: file.type,
       fileSize: file.size,
-    });
-    const dataUrl = trackBlobUrl(id, blob);
-    blobUrlCache.set(id, dataUrl);
-    return { ...record, dataUrl };
+      alt: null,
+      createdAt: new Date().toISOString(),
+    };
   },
-  deleteAsset: async (id: string) => {
-    revokeBlobUrl(id);
-    blobUrlCache.delete(id);
-    await deleteBlob(id);
-    assetsDB.delete(id);
-    return { success: true };
-  },
+  deleteAsset: (id: string) =>
+    fetchJSON<{ success: boolean }>(`/api/assets/${id}`, { method: "DELETE" }),
 
   // Download assets to user's device
   downloadAssets: async (assetIds: string[]): Promise<void> => {
-    const allMeta = assetsDB.getAll();
+    const assets = await fetchJSON<Asset[]>("/api/assets");
     for (const id of assetIds) {
-      const blob = await getBlob(id);
-      if (!blob) continue;
-      const meta = allMeta.find((a) => a.id === id);
-      const filename = meta?.filename || `asset-${id}`;
+      const asset = assets.find((a) => a.id === id);
+      if (!asset) continue;
+      const res = await fetch(asset.url);
+      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = filename;
+      a.download = asset.filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      // Small delay between downloads to avoid browser throttling
       if (assetIds.length > 1) {
         await new Promise((r) => setTimeout(r, 300));
       }
@@ -198,7 +134,8 @@ export const api = {
   },
 
   // Analytics
-  getStats: () => Promise.resolve(analyticsDB.getStats()),
-  getHeatmap: (days?: number) => Promise.resolve(analyticsDB.getHeatmap(days)),
-  getConflicts: () => Promise.resolve(analyticsDB.getConflicts()),
+  getStats: () => fetchJSON<Stats>("/api/analytics/stats"),
+  getHeatmap: (days?: number) =>
+    fetchJSON<HeatmapEntry[]>(`/api/analytics/heatmap${days ? `?days=${days}` : ""}`),
+  getConflicts: () => fetchJSON<Conflict[]>("/api/analytics/conflicts"),
 };

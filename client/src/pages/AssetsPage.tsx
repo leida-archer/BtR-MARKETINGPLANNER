@@ -80,7 +80,7 @@ export function AssetsPage() {
             />
           </label>
         </p>
-        <p className="text-xs text-foreground-muted">Images, videos, and audio — stored locally in your browser</p>
+        <p className="text-xs text-foreground-muted">Images, videos, and audio — shared across all team members</p>
         {uploadMutation.isPending && (
           <p className="text-sm text-gold mt-2">Uploading...</p>
         )}
@@ -96,9 +96,9 @@ export function AssetsPage() {
           >
             {/* Thumbnail */}
             <div className="aspect-square bg-ink flex items-center justify-center relative">
-              {asset.mimeType.startsWith("image/") && asset.dataUrl ? (
+              {asset.mimeType.startsWith("image/") && asset.url ? (
                 <img
-                  src={asset.dataUrl}
+                  src={asset.url}
                   alt={asset.alt || asset.filename}
                   className="w-full h-full object-cover"
                 />
@@ -152,13 +152,13 @@ export function AssetsPage() {
             </button>
             {previewAsset.mimeType.startsWith("image/") ? (
               <img
-                src={previewAsset.dataUrl}
+                src={previewAsset.url}
                 alt={previewAsset.alt || previewAsset.filename}
                 className="max-w-full max-h-[80vh] object-contain"
               />
             ) : previewAsset.mimeType.startsWith("video/") ? (
               <video
-                src={previewAsset.dataUrl}
+                src={previewAsset.url}
                 controls
                 className="max-w-full max-h-[80vh]"
               />
