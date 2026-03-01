@@ -31,13 +31,23 @@ export function Sidebar() {
       )}
     >
       {/* Logo */}
-      <div className="flex items-center justify-center h-14 px-3 border-b border-border">
+      <div className="relative flex items-center justify-center h-14 px-3 border-b border-border">
+        {/* Full logo — visible when expanded */}
         <img
           src={`${import.meta.env.BASE_URL}logo-on-dark.svg`}
           alt="Beyond the Rhythm"
           className={cn(
-            "transition-all duration-200",
-            collapsed ? "h-8 w-8 object-contain" : "h-8"
+            "h-8 absolute transition-opacity duration-200",
+            collapsed ? "opacity-0" : "opacity-100"
+          )}
+        />
+        {/* Waveform icon — visible when collapsed */}
+        <img
+          src={`${import.meta.env.BASE_URL}logo-icon.svg`}
+          alt="Beyond the Rhythm"
+          className={cn(
+            "h-8 w-8 absolute transition-opacity duration-200",
+            collapsed ? "opacity-100" : "opacity-0"
           )}
         />
       </div>
