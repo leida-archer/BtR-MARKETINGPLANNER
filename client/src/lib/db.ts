@@ -36,6 +36,7 @@ export interface PostRecord {
   eventId: string | null;
   collaboratorId: string | null;
   tagIds: string[];
+  assetIds: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -78,6 +79,7 @@ export const postsDB = {
       eventId: data.eventId || null,
       collaboratorId: data.collaboratorId || null,
       tagIds: data.tagIds || [],
+      assetIds: data.assetIds || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -267,6 +269,16 @@ export const assetsDB = {
 
   delete(id: string): void {
     setStore("assets", getStore<AssetRecord>("assets").filter((a) => a.id !== id));
+    // Remove from all posts that reference this asset
+    const posts = getStore<PostRecord>("posts");
+    let changed = false;
+    for (const p of posts) {
+      if (p.assetIds?.includes(id)) {
+        p.assetIds = p.assetIds.filter((aid) => aid !== id);
+        changed = true;
+      }
+    }
+    if (changed) setStore("posts", posts);
   },
 };
 

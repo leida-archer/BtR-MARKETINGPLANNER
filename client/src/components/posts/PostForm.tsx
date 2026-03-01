@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { PLATFORMS, STATUSES, POST_TYPES, PRIORITIES } from "@/lib/constants";
 import { ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AssetPicker } from "./AssetPicker";
 import type { Post, PostFormData } from "@/types";
 
 const EMPTY_FORM: PostFormData = {
@@ -20,6 +21,7 @@ const EMPTY_FORM: PostFormData = {
   eventId: "",
   collaboratorId: "",
   tagIds: [],
+  assetIds: [],
 };
 
 interface DropdownOption {
@@ -152,6 +154,7 @@ export function PostForm({
         eventId: post.eventId || "",
         collaboratorId: post.collaboratorId || "",
         tagIds: post.tags?.map((t) => t.tagId) || [],
+        assetIds: post.assets?.map((a) => a.assetId) || [],
       });
     } else {
       setForm(EMPTY_FORM);
@@ -374,6 +377,13 @@ export function PostForm({
           />
         )}
       </div>
+
+      {/* Assets */}
+      <AssetPicker
+        selectedAssetIds={form.assetIds}
+        onSelectionChange={(ids) => set("assetIds", ids)}
+        maxAssets={10}
+      />
 
       {/* Caption */}
       <div>

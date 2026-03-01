@@ -3,6 +3,7 @@ import { PlatformIcon } from "./PlatformIcon";
 import { StatusBadge } from "./StatusBadge";
 import { useUIStore } from "@/stores/uiStore";
 import { getPriorityColor } from "@/lib/constants";
+import { Image } from "lucide-react";
 import type { Post } from "@/types";
 
 export function PostCard({ post }: { post: Post }) {
@@ -28,6 +29,12 @@ export function PostCard({ post }: { post: Post }) {
           </div>
           <div className="flex items-center gap-2 mt-1">
             <StatusBadge status={post.status} />
+            {post.assets.length > 0 && (
+              <span className="flex items-center gap-0.5 text-xs text-foreground-muted">
+                <Image className="w-3 h-3" />
+                {post.assets.length}
+              </span>
+            )}
             {post.scheduledDate && (
               <span className="text-xs text-foreground-muted">
                 {format(new Date(post.scheduledDate), "MMM d")}

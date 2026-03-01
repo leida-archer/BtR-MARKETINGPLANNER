@@ -23,6 +23,7 @@ export function PostDialog() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
       closeDialog();
     },
   });
@@ -33,6 +34,7 @@ export function PostDialog() {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["post", selectedPostId] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
       closeDialog();
     },
   });

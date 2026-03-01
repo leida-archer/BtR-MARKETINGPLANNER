@@ -22,12 +22,20 @@ function enrichPost(p: PostRecord): Post {
     ? collaborators.find((c) => c.id === p.collaboratorId) || null
     : null;
 
+  const allAssets = assetsDB.getAll();
+  const resolvedAssets = (p.assetIds || [])
+    .map((assetId) => {
+      const asset = allAssets.find((a) => a.id === assetId);
+      return asset ? { postId: p.id, assetId: asset.id, asset } : null;
+    })
+    .filter(Boolean);
+
   return {
     ...p,
     event: event ? { id: event.id, name: event.name } : null,
     collaborator: collaborator ? { id: collaborator.id, name: collaborator.name } : null,
     tags: tags.map((t) => ({ postId: p.id, tagId: t.id, tag: t })),
-    assets: [],
+    assets: resolvedAssets,
   } as Post;
 }
 
@@ -59,6 +67,7 @@ export const api = {
     const post = postsDB.create({
       ...data,
       tagIds: data.tagIds || [],
+      assetIds: data.assetIds || [],
       scheduledDate: data.scheduledDate || null,
       scheduledTime: data.scheduledTime || null,
       eventId: data.eventId || null,
@@ -70,6 +79,7 @@ export const api = {
     const post = postsDB.update(id, {
       ...data,
       tagIds: data.tagIds || [],
+      assetIds: data.assetIds || [],
       scheduledDate: data.scheduledDate || null,
       scheduledTime: data.scheduledTime || null,
       eventId: data.eventId || null,

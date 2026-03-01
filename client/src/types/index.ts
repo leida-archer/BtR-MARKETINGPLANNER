@@ -96,4 +96,5 @@ export interface PostFormData {
   eventId: string;
   collaboratorId: string;
   tagIds: string[];
+  assetIds: string[];
 }
