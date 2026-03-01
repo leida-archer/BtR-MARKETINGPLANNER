@@ -96,17 +96,17 @@ export const api = {
       access: "public",
       handleUploadUrl: "/api/assets/upload",
     });
-    // The onUploadCompleted callback on the server creates the DB record.
-    // Return a temporary asset object; the next getAssets() call will have the real one.
-    return {
-      id: "",
-      filename: file.name,
-      url: blob.url,
-      mimeType: file.type,
-      fileSize: file.size,
-      alt: null,
-      createdAt: new Date().toISOString(),
-    };
+    // Save metadata to Postgres after Blob upload succeeds
+    const asset = await fetchJSON<Asset>("/api/assets", {
+      method: "POST",
+      body: JSON.stringify({
+        filename: file.name,
+        url: blob.url,
+        mimeType: file.type || "application/octet-stream",
+        fileSize: file.size,
+      }),
+    });
+    return asset;
   },
   deleteAsset: (id: string) =>
     fetchJSON<{ success: boolean }>(`/api/assets/${id}`, { method: "DELETE" }),

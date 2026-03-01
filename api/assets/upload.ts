@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { prisma } from "../_lib/prisma";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -21,16 +20,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           maximumSizeInBytes: 100 * 1024 * 1024, // 100 MB
         };
       },
-      onUploadCompleted: async ({ blob }) => {
-        // Save metadata to Postgres
-        await prisma.asset.create({
-          data: {
-            filename: blob.pathname.split("/").pop() || blob.pathname,
-            url: blob.url,
-            mimeType: blob.contentType || "application/octet-stream",
-            fileSize: blob.size,
-          },
-        });
+      onUploadCompleted: async () => {
+        // DB record created by client POST to /api/assets after upload
       },
     });
 
