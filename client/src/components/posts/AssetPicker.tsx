@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Image, Film, Music, X, Plus, Check, LayoutGrid, List } from "lucide-react";
@@ -383,15 +384,17 @@ export function AssetPicker({
         </button>
       )}
 
-      {/* Modal */}
-      {modalOpen && (
-        <AssetPickerModal
-          selectedAssetIds={selectedAssetIds}
-          onToggle={toggleAsset}
-          onClose={() => setModalOpen(false)}
-          maxAssets={maxAssets}
-        />
-      )}
+      {/* Modal — portaled to document.body to escape PostDialog overflow clipping */}
+      {modalOpen &&
+        createPortal(
+          <AssetPickerModal
+            selectedAssetIds={selectedAssetIds}
+            onToggle={toggleAsset}
+            onClose={() => setModalOpen(false)}
+            maxAssets={maxAssets}
+          />,
+          document.body
+        )}
     </div>
   );
 }
