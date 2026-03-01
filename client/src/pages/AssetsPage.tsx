@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Upload, X, Image, Film, Trash2 } from "lucide-react";
+import { Upload, X, Image, Film, Trash2, Download } from "lucide-react";
 import { format } from "date-fns";
 import type { Asset } from "@/types";
 
@@ -107,18 +107,28 @@ export function AssetsPage() {
               ) : (
                 <Image className="w-8 h-8 text-foreground-muted" />
               )}
-              {/* Delete button overlay */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (confirm("Delete this asset?")) {
-                    deleteMutation.mutate(asset.id);
-                  }
-                }}
-                className="absolute top-2 right-2 p-1 rounded bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-coral/80"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {/* Action buttons overlay */}
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <a
+                  href={asset.url}
+                  download={asset.filename}
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-1 rounded bg-black/60 text-white hover:bg-magenta/80 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </a>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm("Delete this asset?")) {
+                      deleteMutation.mutate(asset.id);
+                    }
+                  }}
+                  className="p-1 rounded bg-black/60 text-white hover:bg-coral/80 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             {/* Info */}
             <div className="p-2">
@@ -165,12 +175,22 @@ export function AssetsPage() {
             ) : (
               <div className="p-12 text-foreground-muted">Preview not available</div>
             )}
-            <div className="p-4 border-t border-border">
-              <p className="text-sm text-foreground">{previewAsset.filename}</p>
-              <p className="text-xs text-foreground-muted">
-                {previewAsset.mimeType} &middot; {formatFileSize(previewAsset.fileSize)} &middot;{" "}
-                {format(new Date(previewAsset.createdAt), "MMM d, yyyy")}
-              </p>
+            <div className="p-4 border-t border-border flex items-center justify-between">
+              <div>
+                <p className="text-sm text-foreground">{previewAsset.filename}</p>
+                <p className="text-xs text-foreground-muted">
+                  {previewAsset.mimeType} &middot; {formatFileSize(previewAsset.fileSize)} &middot;{" "}
+                  {format(new Date(previewAsset.createdAt), "MMM d, yyyy")}
+                </p>
+              </div>
+              <a
+                href={previewAsset.url}
+                download={previewAsset.filename}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-magenta text-white text-sm hover:bg-magenta/80 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Download
+              </a>
             </div>
           </div>
         </div>
