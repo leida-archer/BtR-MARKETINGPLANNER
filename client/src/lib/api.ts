@@ -23,24 +23,24 @@ export const api = {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
     return fetchJSON<Post[]>(`/api/posts${qs}`);
   },
-  getPost: (id: string) => fetchJSON<Post>(`/api/posts/${id}`),
+  getPost: (id: string) => fetchJSON<Post>(`/api/posts?id=${id}`),
   createPost: (data: any) =>
     fetchJSON<Post>("/api/posts", {
       method: "POST",
       body: JSON.stringify(data),
     }),
   updatePost: (id: string, data: any) =>
-    fetchJSON<Post>(`/api/posts/${id}`, {
+    fetchJSON<Post>(`/api/posts?id=${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
   updatePostStatus: (id: string, status: string, sortOrder?: number) =>
-    fetchJSON<Post>(`/api/posts/${id}`, {
+    fetchJSON<Post>(`/api/posts?id=${id}`, {
       method: "PATCH",
       body: JSON.stringify({ action: "status", status, sortOrder }),
     }),
   reschedulePost: (id: string, scheduledDate: string, scheduledTime?: string) =>
-    fetchJSON<Post>(`/api/posts/${id}`, {
+    fetchJSON<Post>(`/api/posts?id=${id}`, {
       method: "PATCH",
       body: JSON.stringify({ action: "schedule", scheduledDate, scheduledTime }),
     }),
@@ -50,25 +50,25 @@ export const api = {
       body: JSON.stringify({ updates }),
     }),
   deletePost: (id: string) =>
-    fetchJSON<{ success: boolean }>(`/api/posts/${id}`, { method: "DELETE" }),
+    fetchJSON<{ success: boolean }>(`/api/posts?id=${id}`, { method: "DELETE" }),
 
   // Events
   getEvents: () => fetchJSON<Event[]>("/api/events"),
-  getEvent: (id: string) => fetchJSON<Event>(`/api/events/${id}`),
+  getEvent: (id: string) => fetchJSON<Event>(`/api/events?id=${id}`),
   createEvent: (data: any) =>
     fetchJSON<Event>("/api/events", {
       method: "POST",
       body: JSON.stringify(data),
     }),
   updateEvent: (id: string, data: any) =>
-    fetchJSON<Event>(`/api/events/${id}`, {
+    fetchJSON<Event>(`/api/events?id=${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
   deleteEvent: (id: string) =>
-    fetchJSON<{ success: boolean }>(`/api/events/${id}`, { method: "DELETE" }),
+    fetchJSON<{ success: boolean }>(`/api/events?id=${id}`, { method: "DELETE" }),
   generateCampaign: (id: string) =>
-    fetchJSON<{ generated: number; posts: Post[] }>(`/api/events/${id}`, {
+    fetchJSON<{ generated: number; posts: Post[] }>(`/api/events?id=${id}`, {
       method: "POST",
     }),
 
@@ -80,7 +80,7 @@ export const api = {
       body: JSON.stringify(data),
     }),
   deleteTag: (id: string) =>
-    fetchJSON<{ success: boolean }>(`/api/tags/${id}`, { method: "DELETE" }),
+    fetchJSON<{ success: boolean }>(`/api/tags?id=${id}`, { method: "DELETE" }),
 
   // Collaborators
   getCollaborators: () => fetchJSON<Collaborator[]>("/api/collaborators"),
@@ -111,7 +111,7 @@ export const api = {
     return asset;
   },
   deleteAsset: (id: string) =>
-    fetchJSON<{ success: boolean }>(`/api/assets/${id}`, { method: "DELETE" }),
+    fetchJSON<{ success: boolean }>(`/api/assets?id=${id}`, { method: "DELETE" }),
 
   // Download assets to user's device
   downloadAssets: async (assetIds: string[]): Promise<void> => {
