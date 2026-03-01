@@ -5,8 +5,10 @@ import type { Post, Event, Asset, Tag, Collaborator, Stats, HeatmapEntry, Confli
 
 async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
     ...init,
+    headers: {
+      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+    },
   });
   if (!res.ok) {
     const body = await res.text();
