@@ -24,6 +24,7 @@ import { STATUSES } from "@/lib/constants";
 import { PostCard } from "@/components/posts/PostCard";
 import type { Post, Status } from "@/types";
 
+
 function SortablePostCard({ post }: { post: Post }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: post.id });
@@ -92,7 +93,7 @@ export function KanbanPage() {
   const searchQuery = useUIStore((s) => s.searchQuery);
   const queryClient = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [localStatusOverrides, setLocalStatusOverrides] = useState<Record<string, string>>({});
+  const [localStatusOverrides, setLocalStatusOverrides] = useState<Record<string, Status>>({});
 
   const params: Record<string, string> = {};
   if (filters.platform) params.platform = filters.platform;
@@ -167,7 +168,7 @@ export function KanbanPage() {
 
     if (activeColumn !== overColumn) {
       // Immediate visual update via local state
-      setLocalStatusOverrides((prev) => ({ ...prev, [active.id as string]: overColumn }));
+      setLocalStatusOverrides((prev) => ({ ...prev, [active.id as string]: overColumn as Status }));
       // Persist to server
       statusMutation.mutate({
         id: active.id as string,
