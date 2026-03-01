@@ -63,7 +63,7 @@ export function PostDialog() {
 
       {/* Dialog */}
       <div className="relative bg-charcoal border border-border rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto z-10">
-        <div className="sticky top-0 bg-charcoal border-b border-border px-6 py-4 flex items-center justify-between rounded-t-xl">
+        <div className="sticky top-0 z-10 bg-charcoal border-b border-border px-6 py-4 flex items-center justify-between rounded-t-xl shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
           <h2 className="font-heading text-lg font-semibold text-foreground">
             {selectedPostId ? "Edit Post" : "New Post"}
           </h2>

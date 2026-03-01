@@ -33,7 +33,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center justify-center h-14 px-3 border-b border-border">
         <img
-          src="/logo-on-dark.svg"
+          src={`${import.meta.env.BASE_URL}logo-on-dark.svg`}
           alt="Beyond the Rhythm"
           className={cn(
             "transition-all duration-200",

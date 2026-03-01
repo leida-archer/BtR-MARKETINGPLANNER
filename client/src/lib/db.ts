@@ -384,7 +384,8 @@ export function generateCampaignPosts(eventId: string) {
 // ---------- SEED DATA ----------
 
 export function seedIfEmpty() {
-  if (getStore("posts").length > 0 || getStore("events").length > 0) return;
+  if (localStorage.getItem("btr_seeded")) return;
+  localStorage.setItem("btr_seeded", "1");
 
   // Seed collaborators
   collaboratorsDB.create({ name: "Archer", role: "Founder / Content Lead" });
