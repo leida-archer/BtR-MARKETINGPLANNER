@@ -77,14 +77,14 @@ export function PostDialog() {
           </button>
         </div>
         <div className="p-6">
-          {selectedPostId && isLoading ? (
+          {selectedPostId && !post ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-6 h-6 border-2 border-magenta border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
             <PostForm
               key={selectedPostId || "new"}
-              post={selectedPostId ? (post ?? null) : null}
+              post={post ?? null}
               onSubmit={handleSubmit}
               onDelete={selectedPostId ? () => deleteMutation.mutate() : undefined}
             />

@@ -113,9 +113,6 @@ export function KanbanPage() {
     onError: () => {
       setLocalStatusOverrides({});
     },
-    onSettled: () => {
-      setLocalStatusOverrides({});
-    },
   });
 
   const sensors = useSensors(
