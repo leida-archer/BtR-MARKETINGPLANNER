@@ -237,7 +237,6 @@ export const collaboratorsDB = {
 export interface AssetRecord {
   id: string;
   filename: string;
-  dataUrl: string; // Base64 data URL for localStorage
   mimeType: string;
   fileSize: number;
   alt: string | null;
@@ -251,12 +250,11 @@ export const assetsDB = {
     );
   },
 
-  create(data: Partial<AssetRecord>): AssetRecord {
+  create(data: Partial<AssetRecord> & { id?: string }): AssetRecord {
     const assets = getStore<AssetRecord>("assets");
     const asset: AssetRecord = {
-      id: generateId(),
+      id: data.id || generateId(),
       filename: data.filename || "",
-      dataUrl: data.dataUrl || "",
       mimeType: data.mimeType || "",
       fileSize: data.fileSize || 0,
       alt: data.alt || null,

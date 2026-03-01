@@ -74,13 +74,13 @@ export function AssetsPage() {
             <input
               type="file"
               multiple
-              accept="image/*,video/*"
+              accept="image/*,video/*,audio/*"
               className="hidden"
               onChange={(e) => handleFiles(e.target.files)}
             />
           </label>
         </p>
-        <p className="text-xs text-foreground-muted">Images and videos up to 100MB</p>
+        <p className="text-xs text-foreground-muted">Images, videos, and audio — stored locally in your browser</p>
         {uploadMutation.isPending && (
           <p className="text-sm text-gold mt-2">Uploading...</p>
         )}

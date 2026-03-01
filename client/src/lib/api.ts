@@ -12,7 +12,17 @@ import {
   type PostRecord,
   type EventRecord,
 } from "./db";
-import type { Post, Event } from "@/types";
+import {
+  putBlob,
+  deleteBlob,
+  getAllBlobUrls,
+  trackBlobUrl,
+  revokeBlobUrl,
+} from "./assetStorage";
+import type { Post, Event, Asset } from "@/types";
+
+// Cached blob URL map — refreshed by getAssets()
+let blobUrlCache = new Map<string, string>();
 
 function enrichPost(p: PostRecord): Post {
   const event = p.eventId ? eventsDB.getById(p.eventId) : null;
@@ -25,8 +35,10 @@ function enrichPost(p: PostRecord): Post {
   const allAssets = assetsDB.getAll();
   const resolvedAssets = (p.assetIds || [])
     .map((assetId) => {
-      const asset = allAssets.find((a) => a.id === assetId);
-      return asset ? { postId: p.id, assetId: asset.id, asset } : null;
+      const meta = allAssets.find((a) => a.id === assetId);
+      if (!meta) return null;
+      const asset: Asset = { ...meta, dataUrl: blobUrlCache.get(assetId) || "" };
+      return { postId: p.id, assetId: asset.id, asset };
     })
     .filter(Boolean);
 
@@ -129,25 +141,36 @@ export const api = {
   getCollaborators: () => Promise.resolve(collaboratorsDB.getAll()),
   createCollaborator: (data: any) => Promise.resolve(collaboratorsDB.create(data)),
 
-  // Assets — files stored as base64 data URLs in localStorage
-  getAssets: () => Promise.resolve(assetsDB.getAll()),
-  uploadAsset: (file: File) =>
-    new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const asset = assetsDB.create({
-          filename: file.name,
-          dataUrl: reader.result as string,
-          mimeType: file.type,
-          fileSize: file.size,
-        });
-        resolve(asset);
-      };
-      reader.readAsDataURL(file);
-    }),
-  deleteAsset: (id: string) => {
+  // Assets — binary stored in IndexedDB, metadata in localStorage
+  getAssets: async (): Promise<Asset[]> => {
+    blobUrlCache = await getAllBlobUrls();
+    const records = assetsDB.getAll();
+    return records.map((r) => ({
+      ...r,
+      dataUrl: blobUrlCache.get(r.id) || "",
+    }));
+  },
+  uploadAsset: async (file: File): Promise<Asset> => {
+    const buffer = await file.arrayBuffer();
+    const blob = new Blob([buffer], { type: file.type });
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+    await putBlob(id, blob);
+    const record = assetsDB.create({
+      id,
+      filename: file.name,
+      mimeType: file.type,
+      fileSize: file.size,
+    });
+    const dataUrl = trackBlobUrl(id, blob);
+    blobUrlCache.set(id, dataUrl);
+    return { ...record, dataUrl };
+  },
+  deleteAsset: async (id: string) => {
+    revokeBlobUrl(id);
+    blobUrlCache.delete(id);
+    await deleteBlob(id);
     assetsDB.delete(id);
-    return Promise.resolve({ success: true });
+    return { success: true };
   },
 
   // Analytics
