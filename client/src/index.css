@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@theme {
+  --color-magenta: #D6246E;
+  --color-orange: #E8652B;
+  --color-gold: #F2A922;
+  --color-violet: #8B5CF6;
+  --color-coral: #FF6B6B;
+  --color-peach: #FFAB91;
+
+  --color-ink: #1A1018;
+  --color-charcoal: #2D2233;
+  --color-slate: #6B5E73;
+  --color-mist: #B8A9C2;
+  --color-cream: #FFF8F0;
+
+  --color-background: #1A1018;
+  --color-surface: #2D2233;
+  --color-surface-hover: #3D3243;
+  --color-foreground: #FFF8F0;
+  --color-foreground-muted: #B8A9C2;
+  --color-border: #3D3243;
+  --color-ring: #D6246E;
+
+  --color-platform-instagram: #E1306C;
+  --color-platform-tiktok: #00F2EA;
+  --color-platform-x: #FFFFFF;
+  --color-platform-reddit: #FF4500;
+
+  --color-status-idea: #8B5CF6;
+  --color-status-scripted: #6366F1;
+  --color-status-in-production: #F59E0B;
+  --color-status-editing: #E8652B;
+  --color-status-approved: #10B981;
+  --color-status-scheduled: #3B82F6;
+  --color-status-posted: #22C55E;
+
+  --font-display: 'BTR Groovy', sans-serif;
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+}
+
+/* FullCalendar dark theme overrides */
+.fc {
+  --fc-border-color: var(--color-border);
+  --fc-page-bg-color: var(--color-background);
+  --fc-neutral-bg-color: var(--color-surface);
+  --fc-list-event-hover-bg-color: var(--color-surface-hover);
+  --fc-today-bg-color: rgba(214, 36, 110, 0.08);
+  --fc-event-bg-color: var(--color-magenta);
+  --fc-event-border-color: transparent;
+  --fc-event-text-color: var(--color-cream);
+  --fc-button-bg-color: var(--color-surface);
+  --fc-button-border-color: var(--color-border);
+  --fc-button-text-color: var(--color-foreground);
+  --fc-button-hover-bg-color: var(--color-surface-hover);
+  --fc-button-hover-border-color: var(--color-border);
+  --fc-button-active-bg-color: var(--color-magenta);
+  --fc-button-active-border-color: var(--color-magenta);
+}
+
+.fc .fc-col-header-cell-cushion,
+.fc .fc-daygrid-day-number,
+.fc .fc-timegrid-slot-label-cushion {
+  color: var(--color-foreground-muted);
+}
+
+.fc .fc-toolbar-title {
+  color: var(--color-foreground);
+  font-family: var(--font-heading);
+}
+
+.fc .fc-scrollgrid {
+  border-color: var(--color-border);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-ink);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-slate);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-mist);
+}
