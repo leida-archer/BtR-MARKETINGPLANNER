@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Image, Film, Music, X, Plus, Check, LayoutGrid, List } from "lucide-react";
+import { Image, Film, Music, X, Plus, Check, LayoutGrid, List, Download, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Asset } from "@/types";
 
@@ -303,6 +303,7 @@ export function AssetPicker({
   maxAssets?: number;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const { data: assets = [] } = useQuery({
     queryKey: ["assets"],
@@ -330,9 +331,34 @@ export function AssetPicker({
 
   return (
     <div>
-      {/* Label + counter */}
+      {/* Label + counter + download */}
       <div className="flex items-center justify-between mb-1">
-        <label className={labelClass}>Assets</label>
+        <div className="flex items-center gap-2">
+          <label className={labelClass}>Assets</label>
+          {selectedAssets.length > 0 && (
+            <button
+              type="button"
+              disabled={downloading}
+              onClick={async () => {
+                setDownloading(true);
+                try {
+                  await api.downloadAssets(selectedAssetIds);
+                } finally {
+                  setDownloading(false);
+                }
+              }}
+              className="flex items-center gap-1 text-[10px] text-foreground-muted hover:text-magenta transition-colors disabled:opacity-50"
+              title="Download all assets"
+            >
+              {downloading ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Download className="w-3 h-3" />
+              )}
+              Download
+            </button>
+          )}
+        </div>
         <span className="text-[10px] text-foreground-muted">
           {selectedAssetIds.length}/{maxAssets}
         </span>

@@ -14,6 +14,7 @@ import {
 } from "./db";
 import {
   putBlob,
+  getBlob,
   deleteBlob,
   getAllBlobUrls,
   trackBlobUrl,
@@ -171,6 +172,29 @@ export const api = {
     await deleteBlob(id);
     assetsDB.delete(id);
     return { success: true };
+  },
+
+  // Download assets to user's device
+  downloadAssets: async (assetIds: string[]): Promise<void> => {
+    const allMeta = assetsDB.getAll();
+    for (const id of assetIds) {
+      const blob = await getBlob(id);
+      if (!blob) continue;
+      const meta = allMeta.find((a) => a.id === id);
+      const filename = meta?.filename || `asset-${id}`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      // Small delay between downloads to avoid browser throttling
+      if (assetIds.length > 1) {
+        await new Promise((r) => setTimeout(r, 300));
+      }
+    }
   },
 
   // Analytics
