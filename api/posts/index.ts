@@ -63,6 +63,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(201).json(post);
   }
 
-  res.setHeader("Allow", "GET, POST");
+  if (req.method === "PATCH") {
+    const { updates } = req.body; // [{ id, sortOrder }]
+    await Promise.all(
+      updates.map((u: { id: string; sortOrder: number }) =>
+        prisma.post.update({ where: { id: u.id }, data: { sortOrder: u.sortOrder } })
+      )
+    );
+    return res.json({ success: true });
+  }
+
+  res.setHeader("Allow", "GET, POST, PATCH");
   return res.status(405).json({ error: "Method not allowed" });
 }

@@ -33,17 +33,17 @@ export const api = {
       body: JSON.stringify(data),
     }),
   updatePostStatus: (id: string, status: string, sortOrder?: number) =>
-    fetchJSON<Post>(`/api/posts/${id}/status`, {
+    fetchJSON<Post>(`/api/posts/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ status, sortOrder }),
+      body: JSON.stringify({ action: "status", status, sortOrder }),
     }),
   reschedulePost: (id: string, scheduledDate: string, scheduledTime?: string) =>
-    fetchJSON<Post>(`/api/posts/${id}/schedule`, {
+    fetchJSON<Post>(`/api/posts/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ scheduledDate, scheduledTime }),
+      body: JSON.stringify({ action: "schedule", scheduledDate, scheduledTime }),
     }),
   reorderPosts: (updates: { id: string; sortOrder: number }[]) =>
-    fetchJSON<{ success: boolean }>("/api/posts/reorder", {
+    fetchJSON<{ success: boolean }>("/api/posts", {
       method: "PATCH",
       body: JSON.stringify({ updates }),
     }),
@@ -66,7 +66,7 @@ export const api = {
   deleteEvent: (id: string) =>
     fetchJSON<{ success: boolean }>(`/api/events/${id}`, { method: "DELETE" }),
   generateCampaign: (id: string) =>
-    fetchJSON<{ generated: number; posts: Post[] }>(`/api/events/${id}/campaign`, {
+    fetchJSON<{ generated: number; posts: Post[] }>(`/api/events/${id}`, {
       method: "POST",
     }),
 
@@ -134,8 +134,8 @@ export const api = {
   },
 
   // Analytics
-  getStats: () => fetchJSON<Stats>("/api/analytics/stats"),
+  getStats: () => fetchJSON<Stats>("/api/analytics?type=stats"),
   getHeatmap: (days?: number) =>
-    fetchJSON<HeatmapEntry[]>(`/api/analytics/heatmap${days ? `?days=${days}` : ""}`),
-  getConflicts: () => fetchJSON<Conflict[]>("/api/analytics/conflicts"),
+    fetchJSON<HeatmapEntry[]>(`/api/analytics?type=heatmap${days ? `&days=${days}` : ""}`),
+  getConflicts: () => fetchJSON<Conflict[]>("/api/analytics?type=conflicts"),
 };

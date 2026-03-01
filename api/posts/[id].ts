@@ -17,11 +17,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "PUT") {
     const { title, platform, postType, status, priority, scheduledDate, scheduledTime, caption, notes, mediaUrl, eventId, collaboratorId, tagIds, assetIds } = req.body;
 
-    // Replace tags
     if (tagIds !== undefined) {
       await prisma.postTag.deleteMany({ where: { postId: id } });
     }
-    // Replace assets
     if (assetIds !== undefined) {
       await prisma.postAsset.deleteMany({ where: { postId: id } });
     }
@@ -54,11 +52,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.json(post);
   }
 
+  if (req.method === "PATCH") {
+    const { action } = req.body;
+
+    if (action === "status") {
+      const { status, sortOrder } = req.body;
+      const post = await prisma.post.update({
+        where: { id },
+        data: { status, ...(sortOrder !== undefined ? { sortOrder } : {}) },
+        include: postInclude,
+      });
+      return res.json(post);
+    }
+
+    if (action === "schedule") {
+      const { scheduledDate, scheduledTime } = req.body;
+      const post = await prisma.post.update({
+        where: { id },
+        data: {
+          scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+          ...(scheduledTime !== undefined ? { scheduledTime } : {}),
+        },
+      });
+      return res.json(post);
+    }
+
+    return res.status(400).json({ error: "Invalid action" });
+  }
+
   if (req.method === "DELETE") {
     await prisma.post.delete({ where: { id } });
     return res.json({ success: true });
   }
 
-  res.setHeader("Allow", "GET, PUT, DELETE");
+  res.setHeader("Allow", "GET, PUT, PATCH, DELETE");
   return res.status(405).json({ error: "Method not allowed" });
 }
